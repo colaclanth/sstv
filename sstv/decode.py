@@ -54,18 +54,17 @@ class SSTVDecoder(object):
         transmission_area = self._samples[vis_end:]
         image_data = self._decode_image_data(transmission_area)
 
-        if image_data is None:
-            return None
-
         return self._draw_image(image_data)
 
     def close(self):
         """Closes any input files if they exist"""
+
         if self._audio_file is not None and not self._audio_file.closed:
             self._audio_file.close()
 
     def _barycentric_peak_interp(bins, x):
         """Interpolate between frequency bins to find x value of peak"""
+
         # Takes x as the index of the largest bin and interpolates the
         # x value of the peak using neighbours in the bins array
 
@@ -188,6 +187,7 @@ class SSTVDecoder(object):
 
     def _calc_lum(freq):
         """Converts SSTV pixel frequency range into 0-255 luminance byte"""
+
         lum = int(round((freq - 1500) / 3.1372549))
         if lum > 255:
             return 255
@@ -198,16 +198,18 @@ class SSTVDecoder(object):
 
     def _align_sync(self, align_section, start_of_sync=True):
         """Returns sample where the beginning of the sync pulse was found"""
+
+        # TODO - improve this
+
         sync_window = round(self.mode.SYNC_PULSE * 1.4 * self._sample_rate)
         search_end = len(align_section) - sync_window
 
-        current_sample = 0
-        while current_sample < search_end:
-            section = align_section[current_sample:current_sample+sync_window]
-            freq = self._peak_fft_freq(section)
-            if freq > 1350:
+        for current_sample in range(search_end):
+            align_end = current_sample + sync_window
+            search_section = align_section[current_sample:align_end]
+
+            if self._peak_fft_freq(search_section) > 1350:
                 break
-            current_sample += 1
 
         end_sync = current_sample + (sync_window // 2)
 
