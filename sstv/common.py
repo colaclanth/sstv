@@ -1,10 +1,12 @@
 """Shared methods"""
 
 from os import get_terminal_size
-from sys import stderr, stdout
+from sys import stderr, stdout, platform
 
 
 def log_message(message="", show=True, err=False, recur=False, prefix=True):
+    """Simple print wrapper"""
+
     if not show:
         return
     out = stdout
@@ -23,14 +25,18 @@ def log_message(message="", show=True, err=False, recur=False, prefix=True):
 
 
 def progress_bar(progress, complete, message="", show=True):
+    """Simple loading bar"""
+
     if not show:
         return
+
     message = ' '.join(["[SSTV]", message])
     cols = get_terminal_size().columns
     percent_on = True
     level = progress / complete
     bar_size = min(cols - len(message) - 10, 100)
     bar = ""
+
     if bar_size > 5:
         fill_size = round(bar_size * level)
         bar = "[{}]".format(''.join(['#' * fill_size,
@@ -41,6 +47,9 @@ def progress_bar(progress, complete, message="", show=True):
     percent = ""
     if percent_on:
         percent = "{:4.0f}%".format(level * 100)
+
+    if platform == "win32":
+        message = '\r' + message
 
     align = cols - len(message) - len(percent)
     not_end = not progress == complete

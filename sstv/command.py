@@ -10,7 +10,7 @@ import argparse
 
 
 class SSTVCommand(object):
-    """ Main class to handle the command line features """
+    """Main class to handle the command line features"""
 
     examples_of_use = """
 examples:
@@ -22,7 +22,8 @@ examples:
 """
 
     def __init__(self):
-        """ Handle command line arguments """
+        """Handle command line arguments"""
+
         self._audio_file = None
         self._output_file = None
 
@@ -38,7 +39,8 @@ examples:
         self.close()
 
     def init_args(self):
-        """ Initialise argparse parser """
+        """Initialise argparse parser"""
+
         version = "sstv 0.1"
 
         parser = argparse.ArgumentParser(
@@ -69,7 +71,8 @@ examples:
         return parser
 
     def parse_args(self):
-        """ Parse command line arguments """
+        """Parse command line arguments"""
+
         parser = self.init_args()
         args = parser.parse_args()
 
@@ -93,6 +96,8 @@ examples:
         return args
 
     def start(self):
+        """Start decoder"""
+
         with SSTVDecoder(self._audio_file) as sstv:
             img = sstv.decode()
             if img is None:  # No SSTV signal found
@@ -106,7 +111,8 @@ examples:
                 img.save("result.png")
 
     def close(self):
-        """ Closes any input/output files if they exist """
+        """Closes any input/output files if they exist"""
+
         if self._audio_file is not None and not self._audio_file.closed:
             self._audio_file.close()
 
