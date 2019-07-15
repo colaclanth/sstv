@@ -2,6 +2,9 @@
 
 from .common import log_message
 from .decode import SSTVDecoder
+from .spec import VIS_MAP
+from PIL import Image
+from soundfile import available_formats as available_audio_formats
 from sys import exit
 import argparse
 
@@ -105,13 +108,14 @@ examples:
             self._audio_file.close()
 
     def list_supported_modes(self):
-        # FIXME hardcode
-        print("M1, S1")
+        modes = ', '.join([fmt.NAME for fmt in VIS_MAP.values()])
+        log_message("Supported modes: {}".format(modes))
 
     def list_supported_audio_formats(self):
-        # FIXME hardcode
-        print("ogg, wav")
+        audio_formats = ', '.join(available_audio_formats().keys())
+        log_message("Supported audio formats: {}".format(audio_formats))
 
     def list_supported_image_formats(self):
-        # FIXME hardcode
-        print("png, jpeg")
+        Image.init()
+        image_formats = ', '.join(Image.SAVE.keys())
+        log_message("Supported image formats: {}".format(image_formats))
