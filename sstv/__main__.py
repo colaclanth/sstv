@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+"""Main entry point for command line program"""
 
 import sstv
 

@@ -1,7 +1,7 @@
-#!usr/bin/env python
+"""Parsing arguments and starting program from command line"""
 
-from sys import exit
 from .decode import SSTVDecoder
+from sys import exit
 import argparse
 
 

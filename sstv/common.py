@@ -1,7 +1,7 @@
-#!usr/bin/env python
+"""Shared methods"""
 
-from sys import stderr, stdout
 from os import get_terminal_size
+from sys import stderr, stdout
 
 
 def log_message(message="", show=True, err=False, recur=False, prefix=True):

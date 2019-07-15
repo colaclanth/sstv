@@ -1,23 +1,18 @@
-#!usr/bin/env python
+"""Class and methods to decode SSTV signal"""
 
 from . import spec
 from .common import log_message, progress_bar
 from PIL import Image
 from scipy.signal.windows import hann
-import soundfile
 import numpy as np
+import soundfile
 
 
 class SSTVDecoder(object):
 
+    """Create an SSTV decoder for decoding audio data"""
+
     def __init__(self, audio_file):
-        """
-        Initialise SSTV decoder
-
-        audio_data - Can be a path to an audio file OR a tuple containing
-                     samples and the sampling rate of audio data
-        """
-
         self.log_basic = True
         self.mode = None
 
@@ -38,11 +33,13 @@ class SSTVDecoder(object):
         self.close()
 
     def decode(self, skip=0):
-        """
-        Attempts to decode the audio data as an SSTV signal
+        """Attempts to decode the audio data as an SSTV signal
 
         Returns a PIL image on success, and None on error
         """
+
+        if skip > 0:
+            self._samples = self._samples[skip:]
 
         header_start = self._find_header()
 
@@ -64,11 +61,12 @@ class SSTVDecoder(object):
         return self._draw_image(image_data)
 
     def close(self):
-        """ Closes any input files if they exist """
+        """Closes any input files if they exist"""
         if self._audio_file is not None and not self._audio_file.closed:
             self._audio_file.close()
 
     def _barycentric_peak_interp(bins, x):
+        """Interpolate between frequency bins to find x value of peak"""
         # Takes x as the index of the largest bin and interpolates the
         # x value of the peak using neighbours in the bins array
 
@@ -90,7 +88,7 @@ class SSTVDecoder(object):
         return (y3 - y1) / denom + x
 
     def _peak_fft_freq(self, data):
-        # Finds the peak frequency from a section of audio data
+        """Finds the peak frequency from a section of audio data"""
 
         windowed_data = data * hann(len(data))
         fft = np.abs(np.fft.rfft(windowed_data))
@@ -104,7 +102,7 @@ class SSTVDecoder(object):
         return peak * self._sample_rate / len(windowed_data)
 
     def _find_header(self):
-        # Finds the approx sample of the calibration header
+        """Finds the approx sample of the calibration header"""
 
         break_sample = round(spec.BREAK_OFFSET * self._sample_rate)
         leader_sample = round(spec.LEADER_OFFSET * self._sample_rate)
@@ -144,7 +142,7 @@ class SSTVDecoder(object):
         return None
 
     def _decode_vis(self, vis_section):
-        # Decodes the vis value from the audio data and returns the SSTV mode
+        """Decodes the vis from the audio data and returns the SSTV mode"""
         bit_size = round(spec.VIS_BIT_SIZE * self._sample_rate)
         vis_bits = []
 
@@ -175,7 +173,7 @@ class SSTVDecoder(object):
         return mode
 
     def _calc_lum(freq):
-        # Converts SSTV pixel frequency range into 0-255 luminance byte
+        """Converts SSTV pixel frequency range into 0-255 luminance byte"""
         lum = int(round((freq - 1500) / 3.1372549))
         if lum > 255:
             return 255
@@ -185,7 +183,7 @@ class SSTVDecoder(object):
             return lum
 
     def _align_sync(self, align_section, start_of_sync=True):
-        # Returns sample where the beginning of the sync pulse was found
+        """Returns sample where the beginning of the sync pulse was found"""
         sync_window = round(self.mode.SYNC_PULSE * 1.4 * self._sample_rate)
         search_end = len(align_section) - sync_window
 
@@ -205,7 +203,7 @@ class SSTVDecoder(object):
             return end_sync
 
     def _decode_image_data(self, transmission):
-        # Decodes image data from the transmission section of an sstv signal
+        """Decodes image from the transmission section of an sstv signal"""
 
         window_factor = self.mode.WINDOW_FACTOR
 
@@ -269,7 +267,7 @@ class SSTVDecoder(object):
         return image_data
 
     def _draw_image(self, image_data):
-        # Renders the image from the decoded sstv signal
+        """Renders the image from the decoded sstv signal"""
 
         if self.mode.COLOR == spec.COL_FMT.YUV:
             col_mode = "YCbCr"

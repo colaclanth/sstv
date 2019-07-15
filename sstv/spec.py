@@ -1,4 +1,4 @@
-#!usr/bin/env python
+"""Constants for SSTV specification and each supported mode"""
 
 from enum import Enum
 
