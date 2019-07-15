@@ -8,6 +8,42 @@ import numpy as np
 import soundfile
 
 
+def calc_lum(freq):
+    """Converts SSTV pixel frequency range into 0-255 luminance byte"""
+
+    lum = int(round((freq - 1500) / 3.1372549))
+    if lum > 255:
+        return 255
+    elif lum < 0:
+        return 0
+    else:
+        return lum
+
+
+def barycentric_peak_interp(bins, x):
+    """Interpolate between frequency bins to find x value of peak"""
+
+    # Takes x as the index of the largest bin and interpolates the
+    # x value of the peak using neighbours in the bins array
+
+    # Make sure data is in bounds
+    if x <= 0:
+        y1 = bins[x]
+    else:
+        y1 = bins[x-1]
+
+    if x + 1 >= len(bins):
+        y3 = bins[x]
+    else:
+        y3 = bins[x+1]
+
+    denom = y3 + bins[x] + y1
+    if denom == 0:
+        return 0  # erroneous
+
+    return (y3 - y1) / denom + x
+
+
 class SSTVDecoder(object):
 
     """Create an SSTV decoder for decoding audio data"""
@@ -62,29 +98,6 @@ class SSTVDecoder(object):
         if self._audio_file is not None and not self._audio_file.closed:
             self._audio_file.close()
 
-    def _barycentric_peak_interp(bins, x):
-        """Interpolate between frequency bins to find x value of peak"""
-
-        # Takes x as the index of the largest bin and interpolates the
-        # x value of the peak using neighbours in the bins array
-
-        # Make sure data is in bounds
-        if x <= 0:
-            y1 = bins[x]
-        else:
-            y1 = bins[x-1]
-
-        if x + 1 >= len(bins):
-            y3 = bins[x]
-        else:
-            y3 = bins[x+1]
-
-        denom = y3 + bins[x] + y1
-        if denom == 0:
-            return 0  # erroneous
-
-        return (y3 - y1) / denom + x
-
     def _peak_fft_freq(self, data):
         """Finds the peak frequency from a section of audio data"""
 
@@ -94,7 +107,7 @@ class SSTVDecoder(object):
         # Get index of bin with highest magnitude
         x = np.argmax(fft)
         # Interpolated peak frequency
-        peak = SSTVDecoder._barycentric_peak_interp(fft, x)
+        peak = barycentric_peak_interp(fft, x)
 
         # Return frequency in hz
         return peak * self._sample_rate / len(windowed_data)
@@ -185,17 +198,6 @@ class SSTVDecoder(object):
 
         return mode
 
-    def _calc_lum(freq):
-        """Converts SSTV pixel frequency range into 0-255 luminance byte"""
-
-        lum = int(round((freq - 1500) / 3.1372549))
-        if lum > 255:
-            return 255
-        elif lum < 0:
-            return 0
-        else:
-            return lum
-
     def _align_sync(self, align_section, start_of_sync=True):
         """Returns sample where the beginning of the sync pulse was found"""
 
@@ -273,7 +275,7 @@ class SSTVDecoder(object):
                     pixel_area = transmission[px_sample:px_sample+pixel_window]
                     freq = self._peak_fft_freq(pixel_area)
 
-                    image_data[line][chan].append(SSTVDecoder._calc_lum(freq))
+                    image_data[line][chan].append(calc_lum(freq))
 
             progress_bar(line, self.mode.LINE_COUNT - 1, "Decoding image... ")
 
