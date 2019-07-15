@@ -222,24 +222,21 @@ class SSTVDecoder(object):
         """Decodes image from the transmission section of an sstv signal"""
 
         window_factor = self.mode.WINDOW_FACTOR
-
-        pixel_window = round(self.mode.PIXEL_TIME * window_factor *
-                             self._sample_rate)
         centre_window_time = (self.mode.PIXEL_TIME * window_factor) / 2
+        pixel_window = round(centre_window_time * 2 * self._sample_rate)
 
         image_data = []
 
+        seq_start = 0
         if self.mode.HAS_START_SYNC:
             # Start at the end of the initial sync pulse
             seq_start = self._align_sync(transmission, start_of_sync=False)
-        else:
-            seq_start = 0
 
         for line in range(self.mode.LINE_COUNT):
             image_data.append([])
 
             if self.mode.CHAN_SYNC > 0 and line == 0:
-                # align seq_start to the beginning of the previous sync pulse
+                # Align seq_start to the beginning of the previous sync pulse
                 sync_offset = self.mode.CHAN_OFFSETS[self.mode.CHAN_SYNC]
                 seq_start -= round((sync_offset + self.mode.SCAN_TIME)
                                    * self._sample_rate)
@@ -249,20 +246,22 @@ class SSTVDecoder(object):
 
                 if chan == self.mode.CHAN_SYNC:
                     if line > 0 or chan > 0:
+                        # Set base offset to the next line
                         seq_start += round(self.mode.LINE_TIME *
                                            self._sample_rate)
 
-                    # align to start of sync pulse
+                    # Align to start of sync pulse
                     seq_start += self._align_sync(transmission[seq_start:])
 
                 pixel_time = self.mode.PIXEL_TIME
                 if self.mode.HAS_MERGE_SCAN:
+                    # Robot mode has half-length second scan
                     if chan % 2 == 1:
                         pixel_time = self.mode.MERGE_PIXEL_TIME
 
-                    pixel_window = round(pixel_time * window_factor *
-                                         self._sample_rate)
                     centre_window_time = (pixel_time * window_factor) / 2
+                    pixel_window = round(centre_window_time * 2 *
+                                         self._sample_rate)
 
                 for px in range(self.mode.LINE_WIDTH):
 
@@ -271,15 +270,13 @@ class SSTVDecoder(object):
                     px_sample = round(seq_start + (chan_offset + px *
                                       pixel_time - centre_window_time) *
                                       self._sample_rate)
-                    section = transmission[px_sample:px_sample+pixel_window]
-                    freq = self._peak_fft_freq(section)
+                    pixel_area = transmission[px_sample:px_sample+pixel_window]
+                    freq = self._peak_fft_freq(pixel_area)
 
                     image_data[line][chan].append(SSTVDecoder._calc_lum(freq))
 
-            progress_bar(line, self.mode.LINE_COUNT - 1,
-                         "Decoding image... ", self.log_basic)
+            progress_bar(line, self.mode.LINE_COUNT - 1, "Decoding image... ")
 
-        log_message("...Done!")
         return image_data
 
     def _draw_image(self, image_data):
@@ -290,30 +287,35 @@ class SSTVDecoder(object):
         else:
             col_mode = "RGB"
 
-        image = Image.new(col_mode,
-                          (self.mode.LINE_WIDTH, self.mode.LINE_COUNT))
+        width = self.mode.LINE_WIDTH
+        height = self.mode.LINE_COUNT
+
+        image = Image.new(col_mode, (width, height))
         pixel_data = image.load()
 
-        for y in range(self.mode.LINE_COUNT):
-            ryby = y % 2
+        log_message("Drawing image data...")
 
-            for x in range(self.mode.LINE_WIDTH):
+        for y in range(height):
+            odd_line = y % 2
 
+            for x in range(width):
                 if self.mode.COLOR == spec.COL_FMT.GBR:
                     pixel = (image_data[y][2][x],
                              image_data[y][0][x],
                              image_data[y][1][x])
                 elif self.mode.COLOR == spec.COL_FMT.YUV:
                     pixel = (image_data[y][0][x],
-                             image_data[y-ryby][1][x],
-                             image_data[y-(ryby-1)][1][x])
+                             image_data[y-odd_line][1][x],
+                             image_data[y-(odd_line-1)][1][x])
                 else:
                     pixel = (image_data[y][0][x],
                              image_data[y][1][x],
                              image_data[y][2][x])
+
                 pixel_data[x, y] = pixel
 
         if self.mode.COLOR == spec.COL_FMT.YUV:
             image = image.convert("RGB")
 
+        log_message("...Done!")
         return image
