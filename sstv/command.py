@@ -1,5 +1,6 @@
 """Parsing arguments and starting program from command line"""
 
+from .common import log_message
 from .decode import SSTVDecoder
 from sys import exit
 import argparse
@@ -45,7 +46,7 @@ examples:
         parser.add_argument("-d", "--decode", type=argparse.FileType('rb'),
                             help="SSTV audio file to decode",
                             dest="audio_file")
-        parser.add_argument("-o", "--output", type=argparse.FileType('wb'),
+        parser.add_argument("-o", "--output", type=str,
                             help="desination of output file",
                             default="result.png",
                             dest="output_file")
@@ -93,13 +94,13 @@ examples:
             img = sstv.decode()
             try:
                 img.save(self._output_file)
-            except KeyError:
+            except (KeyError, ValueError):
+                log_message("Error saving file, saved to result.png instead",
+                            err=True)
                 img.save("result.png")
 
     def close(self):
         """ Closes any input/output files if they exist """
-        if self._output_file is not None and not self._output_file.closed:
-            self._output_file.close()
         if self._audio_file is not None and not self._audio_file.closed:
             self._audio_file.close()
 
