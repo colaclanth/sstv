@@ -1,6 +1,8 @@
 SSTV Decoder
 ============
 
+![](https://raw.githubusercontent.com/colaclanth/sstv/master/examples/m1.png)
+
 A slow-scan television decoder that works on audio files rather than reading a soundcard (like most other decoders).
 Currently supports the following modes:
 * Martin 1
@@ -10,11 +12,15 @@ Currently supports the following modes:
 Installation
 ------------
 
-`git clone https://github.com/colaclanth/sstv.git`
+```
+$ git clone https://github.com/colaclanth/sstv.git
 
-`python setup.py install`
+$ python setup.py install
+```
 
 Usage
 -----
 
-`sstv -d audio_file.wav -o result.png`
+```
+$ sstv -d audio_file.wav -o result.png
+```
