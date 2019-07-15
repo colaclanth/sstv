@@ -41,14 +41,13 @@ class SSTVDecoder(object):
         if skip > 0:
             self._samples = self._samples[skip:]
 
-        header_start = self._find_header()
+        header_end = self._find_header()
 
-        if header_start is None:
+        if header_end is None:
             return None
 
-        vis_start = header_start + round(spec.HDR_SIZE * self._sample_rate)
-        vis_end = vis_start + round(spec.VIS_BIT_SIZE * 9 * self._sample_rate)
-        vis_section = self._samples[vis_start:vis_end]
+        vis_end = header_end + round(spec.VIS_BIT_SIZE * 9 * self._sample_rate)
+        vis_section = self._samples[header_end:vis_end]
 
         self.mode = self._decode_vis(vis_section)
 
@@ -102,7 +101,7 @@ class SSTVDecoder(object):
         return peak * self._sample_rate / len(windowed_data)
 
     def _find_header(self):
-        """Finds the approx sample of the calibration header"""
+        """Finds the approx sample of the end of the calibration header"""
 
         header_size = round(spec.HDR_SIZE * self._sample_rate)
         window_size = round(spec.HDR_WINDOW_SIZE * self._sample_rate)
@@ -142,14 +141,14 @@ class SSTVDecoder(object):
             leader_2_area = search_area[leader_2_sample:leader_2_search]
             vis_start_area = search_area[vis_start_sample:vis_start_search]
 
-            if (abs(self._peak_fft_freq(leader_1_area) - 1200) < 50
-               and abs(self._peak_fft_freq(break_area) - 1900) < 50
+            if (abs(self._peak_fft_freq(leader_1_area) - 1900) < 50
+               and abs(self._peak_fft_freq(break_area) - 1200) < 50
                and abs(self._peak_fft_freq(leader_2_area) - 1900) < 50
                and abs(self._peak_fft_freq(vis_start_area) - 1200) < 50):
 
                 stop_msg = "Searching for calibration header... Found!{:>4}"
                 log_message(stop_msg.format(' '))
-                return current_sample
+                return current_sample + header_size
 
         log_message()
         log_message("Couldn't find SSTV header in the given audio file",
@@ -158,6 +157,7 @@ class SSTVDecoder(object):
 
     def _decode_vis(self, vis_section):
         """Decodes the vis from the audio data and returns the SSTV mode"""
+
         bit_size = round(spec.VIS_BIT_SIZE * self._sample_rate)
         vis_bits = []
 
@@ -170,8 +170,7 @@ class SSTVDecoder(object):
         # check for even parity in last bit
         parity = sum(vis_bits) % 2 == 0
         if not parity:
-            log_message("Error decoding VIS header (incorrect parity bit)")
-            return None
+            raise ValueError("error decoding VIS header (invalid parity bit)")
 
         # LSB first so we must reverse and ignore the parity bit
         vis_value = 0
@@ -179,8 +178,8 @@ class SSTVDecoder(object):
             vis_value = (vis_value << 1) | bit
 
         if vis_value not in spec.VIS_MAP:
-            log_message("SSTV mode is unsupported (VIS: {})".format(vis_value))
-            return None
+            error = "SSTV mode is unsupported (VIS: {})"
+            raise ValueError(error.format(vis_value))
 
         mode = spec.VIS_MAP[vis_value]
         log_message("Detected SSTV mode {}".format(mode.NAME))
