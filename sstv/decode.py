@@ -207,12 +207,7 @@ class SSTVDecoder(object):
     def _decode_image_data(self, transmission):
         # Decodes image data from the transmission section of an sstv signal
 
-        if self.mode == spec.M1:
-            window_factor = 2.34
-        if self.mode == spec.S1:
-            window_factor = 2.48
-        if self.mode == spec.R36:
-            window_factor = 7.83
+        window_factor = self.mode.WINDOW_FACTOR
 
         pixel_window = round(self.mode.PIXEL_TIME * window_factor *
                              self._sample_rate)
