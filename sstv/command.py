@@ -95,6 +95,9 @@ examples:
     def start(self):
         with SSTVDecoder(self._audio_file) as sstv:
             img = sstv.decode()
+            if img is None:  # No SSTV signal found
+                exit(2)
+
             try:
                 img.save(self._output_file)
             except (KeyError, ValueError):

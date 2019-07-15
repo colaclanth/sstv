@@ -35,7 +35,7 @@ class SSTVDecoder(object):
     def decode(self, skip=0):
         """Attempts to decode the audio data as an SSTV signal
 
-        Returns a PIL image on success, and None on error
+        Returns a PIL image on success, and None if no SSTV signal was found
         """
 
         if skip > 0:
@@ -104,12 +104,20 @@ class SSTVDecoder(object):
     def _find_header(self):
         """Finds the approx sample of the calibration header"""
 
-        break_sample = round(spec.BREAK_OFFSET * self._sample_rate)
-        leader_sample = round(spec.LEADER_OFFSET * self._sample_rate)
-        vis_start_sample = round(spec.VIS_START_OFFSET * self._sample_rate)
-
         header_size = round(spec.HDR_SIZE * self._sample_rate)
         window_size = round(spec.HDR_WINDOW_SIZE * self._sample_rate)
+
+        leader_1_sample = 0
+        leader_1_search = leader_1_sample + window_size
+
+        break_sample = round(spec.BREAK_OFFSET * self._sample_rate)
+        break_search = break_sample + window_size
+
+        leader_2_sample = round(spec.LEADER_OFFSET * self._sample_rate)
+        leader_2_search = leader_2_sample + window_size
+
+        vis_start_sample = round(spec.VIS_START_OFFSET * self._sample_rate)
+        vis_start_search = vis_start_sample + window_size
 
         jump_size = round(0.002 * self._sample_rate)  # check every 2ms
 
@@ -119,26 +127,33 @@ class SSTVDecoder(object):
 
         current_sample = 0
 
-        for sample in self._samples[:-header_size+window_size]:
+        for current_sample in range(0, len(self._samples) - header_size,
+                                    jump_size):
             if current_sample % (jump_size * 256) == 0:
-                log_message("Searching for calibration header... {:.1f}s".format(
-                    current_sample / self._sample_rate), self.log_basic, recur=True)
+                search_msg = "Searching for calibration header... {:.1f}s"
+                progress = current_sample / self._sample_rate
+                log_message(search_msg.format(progress), recur=True)
 
-            search_area = self._samples[current_sample:current_sample+header_size]
+            search_end = current_sample + header_size
+            search_area = self._samples[current_sample:search_end]
 
-            if abs(self._peak_fft_freq(search_area[0:window_size]) - 1900) < 50 and \
-                    abs(self._peak_fft_freq(search_area[break_sample:break_sample+window_size]) - 1200) < 50 and \
-                    abs(self._peak_fft_freq(search_area[leader_sample:leader_sample+window_size]) - 1900) < 50 and \
-                    abs(self._peak_fft_freq(search_area[vis_start_sample:vis_start_sample+window_size]) - 1200) < 50:
+            leader_1_area = search_area[leader_1_sample:leader_1_search]
+            break_area = search_area[break_sample:break_search]
+            leader_2_area = search_area[leader_2_sample:leader_2_search]
+            vis_start_area = search_area[vis_start_sample:vis_start_search]
 
-                log_message("Searching for calibration header... Found!{:>4}".format(
-                    ' '), self.log_basic)
+            if (abs(self._peak_fft_freq(leader_1_area) - 1200) < 50
+               and abs(self._peak_fft_freq(break_area) - 1900) < 50
+               and abs(self._peak_fft_freq(leader_2_area) - 1900) < 50
+               and abs(self._peak_fft_freq(vis_start_area) - 1200) < 50):
+
+                stop_msg = "Searching for calibration header... Found!{:>4}"
+                log_message(stop_msg.format(' '))
                 return current_sample
 
-            current_sample += jump_size
-
         log_message()
-        log_message("Couldn't find SSTV header in the given audio file.")
+        log_message("Couldn't find SSTV header in the given audio file",
+                    err=True)
         return None
 
     def _decode_vis(self, vis_section):
