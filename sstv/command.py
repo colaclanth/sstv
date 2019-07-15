@@ -1,8 +1,9 @@
 #!usr/bin/env python
+
 from sys import exit
-from os import path
 from .decode import SSTVDecoder
 import argparse
+
 
 class SSTVCommand(object):
     """ Main class to handle the command line features """
@@ -48,7 +49,8 @@ examples:
                             help="desination of output file",
                             default="result.png",
                             dest="output_file")
-        parser.add_argument("-V", "--version", action="version", version=version)
+        parser.add_argument("-V", "--version", action="version",
+                            version=version)
         parser.add_argument("-v", "--verbose", action="count", default=1,
                             help="increase output to the terminal")
         parser.add_argument("--list-modes", action="store_true",
@@ -69,7 +71,7 @@ examples:
 
         self._audio_file = args.audio_file
         self._output_file = args.output_file
-        
+
         if args.list_modes:
             self.list_supported_modes()
             exit(0)
@@ -93,7 +95,7 @@ examples:
                 img.save(self._output_file)
             except KeyError:
                 img.save("result.png")
-    
+
     def close(self):
         """ Closes any input/output files if they exist """
         if self._output_file is not None and not self._output_file.closed:

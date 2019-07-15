@@ -1,6 +1,8 @@
 #!usr/bin/env python
+
 from sys import stderr, stdout
 from os import get_terminal_size
+
 
 def log_message(message="", show=True, err=False, recur=False, prefix=True):
     if not show:
@@ -18,7 +20,8 @@ def log_message(message="", show=True, err=False, recur=False, prefix=True):
         message = ' '.join(["[SSTV]", message])
 
     print(message, file=out, end=end)
-    
+
+
 def progress_bar(progress, complete, message="", show=True):
     if not show:
         return
@@ -38,8 +41,8 @@ def progress_bar(progress, complete, message="", show=True):
     percent = ""
     if percent_on:
         percent = "{:4.0f}%".format(level * 100)
-    
-    align_size = cols - len(message) - len(percent)
+
+    align = cols - len(message) - len(percent)
     not_end = not progress == complete
-    log_message("{}{:>{width}}{}".format(message, bar, percent,
-                                width=align_size), recur=not_end, prefix=False)
+    log_message("{}{:>{width}}{}".format(message, bar, percent, width=align),
+                recur=not_end, prefix=False)

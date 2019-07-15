@@ -1,4 +1,5 @@
 #!usr/bin/env python
+
 from enum import Enum
 
 BREAK_OFFSET = 0.300
@@ -10,16 +11,19 @@ HDR_WINDOW_SIZE = 0.010
 
 VIS_BIT_SIZE = 0.030
 
+
 class COL_FMT(Enum):
     RGB = 1
     GBR = 2
     YUV = 3
     BW = 4
 
+
 class SSTV(object):
     HAS_START_SYNC = False
     HAS_MERGE_SCAN = False
     CHAN_SYNC = 0
+
 
 class M1(SSTV):
     NAME = "Martin 1"
@@ -35,7 +39,6 @@ class M1(SSTV):
     CHAN_COUNT = 3
     CHAN_TIME = SEP_PULSE + SCAN_TIME
 
-    # CHAN_OFFSETS = [SYNC_PULSE + SYNC_PORCH + c * CHAN_TIME for c in range(CHAN_COUNT)]
     CHAN_OFFSETS = [SYNC_PULSE + SYNC_PORCH]
     CHAN_OFFSETS.append(CHAN_OFFSETS[0] + CHAN_TIME)
     CHAN_OFFSETS.append(CHAN_OFFSETS[1] + CHAN_TIME)
