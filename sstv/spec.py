@@ -2,15 +2,6 @@
 
 from enum import Enum
 
-BREAK_OFFSET = 0.300
-LEADER_OFFSET = 0.010 + BREAK_OFFSET
-VIS_START_OFFSET = 0.300 + LEADER_OFFSET
-
-HDR_SIZE = 0.030 + VIS_START_OFFSET
-HDR_WINDOW_SIZE = 0.010
-
-VIS_BIT_SIZE = 0.030
-
 
 class COL_FMT(Enum):
     RGB = 1
@@ -19,15 +10,9 @@ class COL_FMT(Enum):
     BW = 4
 
 
-class SSTV(object):
-    HAS_START_SYNC = False
-    HAS_MERGE_SCAN = False
-    CHAN_SYNC = 0
-
-
-class M1(SSTV):
+class M1(object):
     NAME = "Martin 1"
-    VIS_CODE = 44
+
     COLOR = COL_FMT.GBR
     LINE_WIDTH = 320
     LINE_COUNT = 256
@@ -37,6 +22,7 @@ class M1(SSTV):
     SEP_PULSE = 0.000572
 
     CHAN_COUNT = 3
+    CHAN_SYNC = 0
     CHAN_TIME = SEP_PULSE + SCAN_TIME
 
     CHAN_OFFSETS = [SYNC_PULSE + SYNC_PORCH]
@@ -46,12 +32,13 @@ class M1(SSTV):
     LINE_TIME = SYNC_PULSE + SYNC_PORCH + 3 * CHAN_TIME
     PIXEL_TIME = SCAN_TIME / LINE_WIDTH
 
+    HAS_START_SYNC = False
+    HAS_MERGE_SCAN = False
 
-class S1(SSTV):
+
+class S1(object):
     NAME = "Scottie 1"
-    HAS_START_SYNC = True
 
-    VIS_CODE = 60
     COLOR = COL_FMT.GBR
     LINE_WIDTH = 320
     LINE_COUNT = 256
@@ -71,12 +58,13 @@ class S1(SSTV):
     LINE_TIME = SYNC_PULSE + 3 * CHAN_TIME
     PIXEL_TIME = SCAN_TIME / LINE_WIDTH
 
+    HAS_START_SYNC = True
+    HAS_MERGE_SCAN = False
 
-class R36(SSTV):
+
+class R36(object):
     NAME = "Robot 36"
-    HAS_MERGE_SCAN = True
 
-    VIS_CODE = 8
     COLOR = COL_FMT.YUV
     LINE_WIDTH = 320
     LINE_COUNT = 240
@@ -88,6 +76,7 @@ class R36(SSTV):
     SEP_PORCH = 0.001500
 
     CHAN_COUNT = 2
+    CHAN_SYNC = 0
     CHAN_TIME = SEP_PULSE + SCAN_TIME
 
     CHAN_OFFSETS = [SYNC_PULSE + SYNC_PORCH]
@@ -97,5 +86,17 @@ class R36(SSTV):
     PIXEL_TIME = SCAN_TIME / LINE_WIDTH
     MERGE_PIXEL_TIME = MERGE_SCAN_TIME / LINE_WIDTH
 
+    HAS_START_SYNC = False
+    HAS_MERGE_SCAN = True
+
 
 VIS_MAP = {44: M1, 60: S1, 8: R36}
+
+BREAK_OFFSET = 0.300
+LEADER_OFFSET = 0.010 + BREAK_OFFSET
+VIS_START_OFFSET = 0.300 + LEADER_OFFSET
+
+HDR_SIZE = 0.030 + VIS_START_OFFSET
+HDR_WINDOW_SIZE = 0.010
+
+VIS_BIT_SIZE = 0.030
