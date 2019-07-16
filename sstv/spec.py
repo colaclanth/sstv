@@ -37,6 +37,26 @@ class M1(object):
     HAS_MERGE_SCAN = False
 
 
+class M2(M1):
+    NAME = "Martin 2"
+
+    LINE_WIDTH = 320
+    SCAN_TIME = 0.073216
+    SYNC_PULSE = 0.004862
+    SYNC_PORCH = 0.000572
+    SEP_PULSE = 0.000572
+
+    CHAN_TIME = SEP_PULSE + SCAN_TIME
+
+    CHAN_OFFSETS = [SYNC_PULSE + SYNC_PORCH]
+    CHAN_OFFSETS.append(CHAN_OFFSETS[0] + CHAN_TIME)
+    CHAN_OFFSETS.append(CHAN_OFFSETS[1] + CHAN_TIME)
+
+    LINE_TIME = SYNC_PULSE + SYNC_PORCH + 3 * CHAN_TIME
+    PIXEL_TIME = SCAN_TIME / LINE_WIDTH
+    WINDOW_FACTOR = 4.68
+
+
 class S1(object):
     NAME = "Scottie 1"
 
@@ -93,7 +113,7 @@ class R36(object):
     HAS_MERGE_SCAN = True
 
 
-VIS_MAP = {44: M1, 60: S1, 8: R36}
+VIS_MAP = {44: M1, 40: M2, 60: S1, 8: R36}
 
 BREAK_OFFSET = 0.300
 LEADER_OFFSET = 0.010 + BREAK_OFFSET
