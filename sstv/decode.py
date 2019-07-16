@@ -136,8 +136,6 @@ class SSTVDecoder(object):
         # vis due to each bit having a length of 30ms. We fix this error margin
         # when decoding the image by aligning each sync pulse
 
-        current_sample = 0
-
         for current_sample in range(0, len(self._samples) - header_size,
                                     jump_size):
             if current_sample % (jump_size * 256) == 0:
@@ -316,7 +314,7 @@ class SSTVDecoder(object):
 
                 pixel_data[x, y] = pixel
 
-        if self.mode.COLOR == spec.COL_FMT.YUV:
+        if image.mode.COLOR != "RGB":
             image = image.convert("RGB")
 
         log_message("...Done!")
