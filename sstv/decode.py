@@ -314,7 +314,7 @@ class SSTVDecoder(object):
 
                 pixel_data[x, y] = pixel
 
-        if image.mode.COLOR != "RGB":
+        if image.mode != "RGB":
             image = image.convert("RGB")
 
         log_message("...Done!")
