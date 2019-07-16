@@ -7,7 +7,7 @@ A slow-scan television decoder that works on audio files rather than reading a s
 Currently supports the following modes:
 * Martin 1, 2
 * Scottie 1, 2, DX
-* Robot 36
+* Robot 36, 72
 
 Installation
 ------------
