@@ -84,6 +84,46 @@ class S1(object):
     HAS_MERGE_SCAN = False
 
 
+class S2(S1):
+    NAME = "Scottie 2"
+
+    LINE_WIDTH = 320
+    SCAN_TIME = 0.088064
+    SYNC_PULSE = 0.009000
+    SYNC_PORCH = 0.001500
+    SEP_PULSE = 0.001500
+
+    CHAN_TIME = SEP_PULSE + SCAN_TIME
+
+    CHAN_OFFSETS = [SYNC_PULSE + SYNC_PORCH + CHAN_TIME]
+    CHAN_OFFSETS.append(CHAN_OFFSETS[0] + CHAN_TIME)
+    CHAN_OFFSETS.append(SYNC_PULSE + SYNC_PORCH)
+
+    LINE_TIME = SYNC_PULSE + 3 * CHAN_TIME
+    PIXEL_TIME = SCAN_TIME / LINE_WIDTH
+    WINDOW_FACTOR = 3.82
+
+
+class SDX(S2):
+    NAME = "Scottie DX"
+
+    LINE_WIDTH = 320
+    SCAN_TIME = 0.345600
+    SYNC_PULSE = 0.009000
+    SYNC_PORCH = 0.001500
+    SEP_PULSE = 0.001500
+
+    CHAN_TIME = SEP_PULSE + SCAN_TIME
+
+    CHAN_OFFSETS = [SYNC_PULSE + SYNC_PORCH + CHAN_TIME]
+    CHAN_OFFSETS.append(CHAN_OFFSETS[0] + CHAN_TIME)
+    CHAN_OFFSETS.append(SYNC_PULSE + SYNC_PORCH)
+
+    LINE_TIME = SYNC_PULSE + 3 * CHAN_TIME
+    PIXEL_TIME = SCAN_TIME / LINE_WIDTH
+    WINDOW_FACTOR = 1.01
+
+
 class R36(object):
     NAME = "Robot 36"
 
@@ -113,7 +153,12 @@ class R36(object):
     HAS_MERGE_SCAN = True
 
 
-VIS_MAP = {44: M1, 40: M2, 60: S1, 8: R36}
+VIS_MAP = {8: R36,
+           40: M2,
+           44: M1,
+           56: S2,
+           60: S1,
+           76: SDX}
 
 BREAK_OFFSET = 0.300
 LEADER_OFFSET = 0.010 + BREAK_OFFSET
