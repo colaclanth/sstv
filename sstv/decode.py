@@ -307,8 +307,8 @@ class SSTVDecoder(object):
                              image_data[y][1][x])
                 elif self.mode.COLOR == spec.COL_FMT.YUV:
                     pixel = (image_data[y][0][x],
-                             image_data[y-odd_line][1][x],
-                             image_data[y-(odd_line-1)][1][x])
+                             image_data[y-(odd_line-1)][1][x],
+                             image_data[y-odd_line][1][x])
                 else:
                     pixel = (image_data[y][0][x],
                              image_data[y][1][x],
