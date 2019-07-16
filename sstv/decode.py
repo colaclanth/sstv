@@ -68,14 +68,14 @@ class SSTVDecoder(object):
     def __del__(self):
         self.close()
 
-    def decode(self, skip=0):
+    def decode(self, skip=0.0):
         """Attempts to decode the audio data as an SSTV signal
 
         Returns a PIL image on success, and None if no SSTV signal was found
         """
 
-        if skip > 0:
-            self._samples = self._samples[skip:]
+        if skip > 0.0:
+            self._samples = self._samples[round(skip * self._sample_rate):]
 
         header_end = self._find_header()
 

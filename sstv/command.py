@@ -49,12 +49,13 @@ examples:
             epilog=self.examples_of_use)
 
         parser.add_argument("-d", "--decode", type=argparse.FileType('rb'),
-                            help="SSTV audio file to decode",
-                            dest="audio_file")
+                            help="decode SSTV audio file", dest="audio_file")
         parser.add_argument("-o", "--output", type=str,
-                            help="desination of output file",
-                            default="result.png",
-                            dest="output_file")
+                            help="save output image to custom location",
+                            default="result.png", dest="output_file")
+        parser.add_argument("-s", "--skip", type=float,
+                            help="time in seconds to start decoding signal at",
+                            default=0.0, dest="skip")
         parser.add_argument("-V", "--version", action="version",
                             version=version)
         parser.add_argument("-v", "--verbose", action="count", default=1,
@@ -78,6 +79,7 @@ examples:
 
         self._audio_file = args.audio_file
         self._output_file = args.output_file
+        self._skip = args.skip
 
         if args.list_modes:
             self.list_supported_modes()
@@ -99,7 +101,7 @@ examples:
         """Start decoder"""
 
         with SSTVDecoder(self._audio_file) as sstv:
-            img = sstv.decode()
+            img = sstv.decode(self._skip)
             if img is None:  # No SSTV signal found
                 exit(2)
 
