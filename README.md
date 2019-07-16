@@ -24,3 +24,8 @@ Usage
 ```
 $ sstv -d audio_file.wav -o result.png
 ```
+
+Resources Used
+--------------
+
+* SSTV specification/timings - [The Dayton Paper](http://webcache.googleusercontent.com/search?q=cache:GzP65FlYEtwJ:www.barberdsp.com/downloads/Dayton%2520Paper.pdf)
