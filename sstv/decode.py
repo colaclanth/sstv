@@ -254,10 +254,10 @@ class SSTVDecoder(object):
                     seq_start += self._align_sync(transmission[seq_start:])
 
                 pixel_time = self.mode.PIXEL_TIME
-                if self.mode.HAS_MERGE_SCAN:
-                    # Robot mode has half-length second scan
-                    if chan % 2 == 1:
-                        pixel_time = self.mode.MERGE_PIXEL_TIME
+                if self.mode.HAS_HALF_SCAN:
+                    # Robot mode has half-length second/third scans
+                    if chan > 0:
+                        pixel_time = self.mode.HALF_PIXEL_TIME
 
                     centre_window_time = (pixel_time * window_factor) / 2
                     pixel_window = round(centre_window_time * 2 *
@@ -289,6 +289,7 @@ class SSTVDecoder(object):
 
         width = self.mode.LINE_WIDTH
         height = self.mode.LINE_COUNT
+        channels = self.mode.CHAN_COUNT
 
         image = Image.new(col_mode, (width, height))
         pixel_data = image.load()
@@ -296,21 +297,35 @@ class SSTVDecoder(object):
         log_message("Drawing image data...")
 
         for y in range(height):
-            odd_line = y % 2
 
+            odd_line = y % 2
             for x in range(width):
-                if self.mode.COLOR == spec.COL_FMT.GBR:
-                    pixel = (image_data[y][2][x],
-                             image_data[y][0][x],
-                             image_data[y][1][x])
-                elif self.mode.COLOR == spec.COL_FMT.YUV:
-                    pixel = (image_data[y][0][x],
-                             image_data[y-(odd_line-1)][1][x],
-                             image_data[y-odd_line][1][x])
-                else:
-                    pixel = (image_data[y][0][x],
-                             image_data[y][1][x],
-                             image_data[y][2][x])
+
+                if channels == 2:
+
+                    if self.mode.HAS_ALT_SCAN:
+                        if self.mode.COLOR == spec.COL_FMT.YUV:
+                            # R36
+                            pixel = (image_data[y][0][x],
+                                     image_data[y-(odd_line-1)][1][x],
+                                     image_data[y-odd_line][1][x])
+
+                elif channels == 3:
+
+                    if self.mode.COLOR == spec.COL_FMT.GBR:
+                        # M1, M2, S1, S2, SDX
+                        pixel = (image_data[y][2][x],
+                                 image_data[y][0][x],
+                                 image_data[y][1][x])
+                    elif self.mode.COLOR == spec.COL_FMT.YUV:
+                        # R72
+                        pixel = (image_data[y][0][x],
+                                 image_data[y][2][x],
+                                 image_data[y][1][x])
+                    elif self.mode.COLOR == spec.COL_FMT.RGB:
+                        pixel = (image_data[y][0][x],
+                                 image_data[y][1][x],
+                                 image_data[y][2][x])
 
                 pixel_data[x, y] = pixel
 
