@@ -120,13 +120,13 @@ examples:
 
     def list_supported_modes(self):
         modes = ', '.join([fmt.NAME for fmt in VIS_MAP.values()])
-        log_message("Supported modes: {}".format(modes))
+        print("Supported modes: {}".format(modes))
 
     def list_supported_audio_formats(self):
         audio_formats = ', '.join(available_audio_formats().keys())
-        log_message("Supported audio formats: {}".format(audio_formats))
+        print("Supported audio formats: {}".format(audio_formats))
 
     def list_supported_image_formats(self):
         Image.init()
         image_formats = ', '.join(Image.SAVE.keys())
-        log_message("Supported image formats: {}".format(image_formats))
+        print("Supported image formats: {}".format(image_formats))
