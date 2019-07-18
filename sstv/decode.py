@@ -116,6 +116,7 @@ class SSTVDecoder(object):
         header_size = round(spec.HDR_SIZE * self._sample_rate)
         window_size = round(spec.HDR_WINDOW_SIZE * self._sample_rate)
 
+        # Relative sample offsets of the header tones
         leader_1_sample = 0
         leader_1_search = leader_1_sample + window_size
 
@@ -136,6 +137,7 @@ class SSTVDecoder(object):
 
         for current_sample in range(0, len(self._samples) - header_size,
                                     jump_size):
+            # Update search progress message
             if current_sample % (jump_size * 256) == 0:
                 search_msg = "Searching for calibration header... {:.1f}s"
                 progress = current_sample / self._sample_rate
@@ -149,6 +151,7 @@ class SSTVDecoder(object):
             leader_2_area = search_area[leader_2_sample:leader_2_search]
             vis_start_area = search_area[vis_start_sample:vis_start_search]
 
+            # Check they're the correct frequencies
             if (abs(self._peak_fft_freq(leader_1_area) - 1900) < 50
                and abs(self._peak_fft_freq(break_area) - 1200) < 50
                and abs(self._peak_fft_freq(leader_2_area) - 1900) < 50
@@ -173,6 +176,7 @@ class SSTVDecoder(object):
             bit_offset = vis_start + bit_idx * bit_size
             section = self._samples[bit_offset:bit_offset+bit_size]
             freq = self._peak_fft_freq(section)
+            # 1100 hz = 1, 1300hz = 0
             vis_bits.append(int(freq <= 1200))
 
         # Check for even parity in last bit
@@ -202,6 +206,9 @@ class SSTVDecoder(object):
         sync_window = round(self.mode.SYNC_PULSE * 1.4 * self._sample_rate)
         align_stop = len(self._samples) - sync_window
 
+        if align_stop <= align_start:
+            return None  # Reached end of audio
+
         for current_sample in range(align_start, align_stop):
             section_end = current_sample + sync_window
             search_section = self._samples[current_sample:section_end]
@@ -223,15 +230,21 @@ class SSTVDecoder(object):
         centre_window_time = (self.mode.PIXEL_TIME * window_factor) / 2
         pixel_window = round(centre_window_time * 2 * self._sample_rate)
 
-        image_data = []
+        height = self.mode.LINE_COUNT
+        channels = self.mode.CHAN_COUNT
+        width = self.mode.LINE_WIDTH
+        # Use list comprehension to init list so we can return data early
+        image_data = [[[0 for i in range(width)]
+                       for j in range(channels)] for k in range(height)]
 
         seq_start = image_start
         if self.mode.HAS_START_SYNC:
             # Start at the end of the initial sync pulse
             seq_start = self._align_sync(image_start, start_of_sync=False)
+            if seq_start is None:
+                raise EOFError("Reached end of audio before image data")
 
-        for line in range(self.mode.LINE_COUNT):
-            image_data.append([])
+        for line in range(height):
 
             if self.mode.CHAN_SYNC > 0 and line == 0:
                 # Align seq_start to the beginning of the previous sync pulse
@@ -239,8 +252,7 @@ class SSTVDecoder(object):
                 seq_start -= round((sync_offset + self.mode.SCAN_TIME)
                                    * self._sample_rate)
 
-            for chan in range(self.mode.CHAN_COUNT):
-                image_data[line].append([])
+            for chan in range(channels):
 
                 if chan == self.mode.CHAN_SYNC:
                     if line > 0 or chan > 0:
@@ -250,6 +262,10 @@ class SSTVDecoder(object):
 
                     # Align to start of sync pulse
                     seq_start = self._align_sync(seq_start)
+                    if seq_start is None:
+                        log_message()
+                        log_message("Reached end of audio whilst decoding.")
+                        return image_data
 
                 pixel_time = self.mode.PIXEL_TIME
                 if self.mode.HAS_HALF_SCAN:
@@ -261,17 +277,25 @@ class SSTVDecoder(object):
                     pixel_window = round(centre_window_time * 2 *
                                          self._sample_rate)
 
-                for px in range(self.mode.LINE_WIDTH):
+                for px in range(width):
 
                     chan_offset = self.mode.CHAN_OFFSETS[chan]
 
                     px_pos = round(seq_start + (chan_offset + px *
                                    pixel_time - centre_window_time) *
                                    self._sample_rate)
-                    pixel_area = self._samples[px_pos:px_pos+pixel_window]
+                    px_end = px_pos + pixel_window
+
+                    # If we are performing fft past audio length, stop early
+                    if px_end >= len(self._samples):
+                        log_message()
+                        log_message("Reached end of audio whilst decoding.")
+                        return image_data
+
+                    pixel_area = self._samples[px_pos:px_end]
                     freq = self._peak_fft_freq(pixel_area)
 
-                    image_data[line][chan].append(calc_lum(freq))
+                    image_data[line][chan][px] = calc_lum(freq)
 
             progress_bar(line, self.mode.LINE_COUNT - 1, "Decoding image... ")
 
@@ -280,6 +304,7 @@ class SSTVDecoder(object):
     def _draw_image(self, image_data):
         """Renders the image from the decoded sstv signal"""
 
+        # Let PIL do YUV-RGB conversion for us
         if self.mode.COLOR == spec.COL_FMT.YUV:
             col_mode = "YCbCr"
         else:
