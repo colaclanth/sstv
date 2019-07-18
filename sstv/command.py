@@ -19,6 +19,9 @@ examples:
 
   Decode SSTV audio file in /tmp to './image.jpg':
     $ sstv -d /tmp/signal.wav -o ./image.jpg
+
+  Start decoding SSTV signal at 50.5 seconds into the audio
+    $ sstv -d audio.ogg -s 50.50
 """
 
     def __init__(self):
