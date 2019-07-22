@@ -16,7 +16,7 @@ class SSTVEncoder(object):
 
     """Create an SSTV encoder that will encode a PIL image"""
 
-    def __init__(self, image, mode=spec.M1):
+    def __init__(self, image, mode=spec.S2):
         self.mode = mode
         self._sample_rate = 44100
         self._orig_image = image
@@ -35,7 +35,6 @@ class SSTVEncoder(object):
 
     def freq_to_samples(self, freq, length):
         """Creates an array of samples using a sine wave of given frequency"""
-
         sample_count = round(length * self._sample_rate)
 
         time_space = np.linspace(0, length, sample_count, endpoint=False)
@@ -91,18 +90,43 @@ class SSTVEncoder(object):
         channels = self.mode.CHAN_COUNT
 
         image = self._orig_image.resize((width, height))
+        if self.mode.COLOR == spec.COL_FMT.YUV:
+            image = image.convert("YCbCr")
+        elif image.mode != "RGB":
+            image = image.convert("RGB")
+
         pixel_data = image.load()
 
         image_data = []
         for y in range(height):
             image_data.append([])
             for x in range(width):
-                if self.mode.COLOR == spec.COL_FMT.GBR:
-                    pixel = (pixel_data[x, y][1],
-                             pixel_data[x, y][2],
-                             pixel_data[x, y][0])
-                    image_data[y].append(pixel)
+                if channels == 2:
+                    if self.mode.HAS_ALT_SCAN:
+                        if self.mode.COLOR == spec.COL_FMT.YUV:
+                            if y % 2 == 0:
+                                ry = round((pixel_data[x, y][2]
+                                            + pixel_data[x, y + 1][2]) / 2)
+                                pixel = (pixel_data[x, y][0],
+                                         ry)
+                            else:
+                                by = round((pixel_data[x, y][1]
+                                            + pixel_data[x, y - 1][1]) / 2)
+                                pixel = (pixel_data[x, y][0],
+                                         by)
+                elif channels == 3:
+                    if self.mode.COLOR == spec.COL_FMT.GBR:
+                        pixel = (pixel_data[x, y][1],
+                                 pixel_data[x, y][2],
+                                 pixel_data[x, y][0])
+                    elif self.mode.COLOR == spec.COL_FMT.YUV:
+                        pixel = (pixel_data[x, y][0],
+                                 pixel_data[x, y][2],
+                                 pixel_data[x, y][1])
+                    elif self.mode.COLOR == spec.COL_FMT.RGB:
+                        pixel = pixel_data[x, y]
 
+                image_data[y].append(pixel)
         return image_data
 
     def encode_image_data(self, image_data):
@@ -112,16 +136,20 @@ class SSTVEncoder(object):
         sep_length = round(self.mode.SEP_PULSE * self._sample_rate)
 
         total_time = round(self.mode.LINE_TIME * self.mode.LINE_COUNT
-                           * self._sample_rate)
+                           * self._sample_rate * 1.05)
+        total_time += sync_length if self.mode.HAS_START_SYNC else 0
 
         data = np.zeros(total_time)
-        data_ptr = 0
 
         height = self.mode.LINE_COUNT
         channels = self.mode.CHAN_COUNT
         width = self.mode.LINE_WIDTH
 
-        pixel_time = self.mode.PIXEL_TIME
+        data_ptr = 0
+        if self.mode.HAS_START_SYNC:
+            self.add_tone_data(data, data_ptr, 1200,
+                               self.mode.SYNC_PULSE)
+            data_ptr += sync_length
 
         for line in range(height):
             for chan in range(channels):
@@ -133,6 +161,14 @@ class SSTVEncoder(object):
                     self.add_tone_data(data, data_ptr, 1500,
                                        self.mode.SYNC_PORCH)
                     data_ptr += porch_length
+                elif self.mode.CHAN_SYNC > 0:
+                    self.add_tone_data(data, data_ptr, 1500,
+                                       self.mode.SEP_PULSE)
+                    data_ptr += sep_length
+
+                pixel_time = self.mode.PIXEL_TIME
+                if self.mode.HAS_HALF_SCAN and chan > 0:
+                    pixel_time = self.mode.HALF_PIXEL_TIME
 
                 last_px_end = data_ptr
                 for px in range(width):
@@ -144,8 +180,40 @@ class SSTVEncoder(object):
                     self.add_tone_data(data, px_pos, freq, px_size)
 
                 data_ptr = last_px_end  # end of last pixel
-                self.add_tone_data(data, data_ptr, 1500, self.mode.SEP_PULSE)
-                data_ptr += sep_length
+                if self.mode.CHAN_SYNC == 0:
+                    if self.mode.HAS_ALT_SCAN and chan == 0:
+                        if line % 2 == 0:
+                            self.add_tone_data(data, data_ptr, 1500,
+                                               self.mode.SEP_PULSE)
+                        else:
+                            self.add_tone_data(data, data_ptr, 2300,
+                                               self.mode.SEP_PULSE)
+                        data_ptr += sep_length
+                        self.add_tone_data(data, data_ptr, 1900,
+                                           self.mode.SEP_PORCH)
+                        data_ptr += round(self.mode.SEP_PORCH *
+                                          self._sample_rate)
+                    elif self.mode.HAS_HALF_SCAN:
+                        if chan == 0:
+                            self.add_tone_data(data, data_ptr, 1500,
+                                               self.mode.SEP_PULSE)
+                            data_ptr += sep_length
+                            self.add_tone_data(data, data_ptr, 1900,
+                                               self.mode.SEP_PORCH)
+                            data_ptr += round(self.mode.SEP_PORCH *
+                                              self._sample_rate)
+                        elif chan == 1:
+                            self.add_tone_data(data, data_ptr, 2300,
+                                               self.mode.SEP_PULSE)
+                            data_ptr += sep_length
+                            self.add_tone_data(data, data_ptr, 1500,
+                                               self.mode.SEP_PORCH)
+                            data_ptr += round(self.mode.SEP_PORCH *
+                                              self._sample_rate)
+                    else:
+                        self.add_tone_data(data, data_ptr, 1500,
+                                           self.mode.SEP_PULSE)
+                        data_ptr += sep_length
 
             progress_bar(line, height - 1, "Encoding image data...")
 
