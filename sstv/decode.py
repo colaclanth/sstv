@@ -292,7 +292,7 @@ class SSTVDecoder(object):
 
                     image_data[line][chan][px] = calc_lum(freq)
 
-            progress_bar(line, self.mode.LINE_COUNT - 1, "Decoding image... ")
+            progress_bar(line, height - 1, "Decoding image...")
 
         return image_data
 
