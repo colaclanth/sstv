@@ -48,7 +48,7 @@ def progress_bar(progress, complete, message="", show=True):
 
     percent = ""
     if percent_on:
-        percent = "{:4.0f}%".format(level * 100)
+        percent = "{:4d}%".format(int(level * 100))
 
     align = cols - message_size - len(percent)
     not_end = not progress == complete
