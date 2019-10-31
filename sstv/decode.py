@@ -13,7 +13,7 @@ def calc_lum(freq):
     """Converts SSTV pixel frequency range into 0-255 luminance byte"""
 
     lum = int(round((freq - 1500) / 3.1372549))
-    return 255 if lum > 255 else 0 if lum < 0 else lum
+    return min(max(lum, 0), 255)
 
 
 def barycentric_peak_interp(bins, x):
@@ -23,15 +23,8 @@ def barycentric_peak_interp(bins, x):
     # x value of the peak using neighbours in the bins array
 
     # Make sure data is in bounds
-    if x <= 0:
-        y1 = bins[x]
-    else:
-        y1 = bins[x-1]
-
-    if x + 1 >= len(bins):
-        y3 = bins[x]
-    else:
-        y3 = bins[x+1]
+    y1 = bins[x] if x <= 0 else bins[x-1]
+    y3 = bins[x] if x + 1 >= len(bins) else bins[x+1]
 
     denom = y3 + bins[x] + y1
     if denom == 0:

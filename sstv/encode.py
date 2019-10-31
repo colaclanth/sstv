@@ -10,7 +10,7 @@ def calc_freq(lum):
     """Converts 0-255 luminance byte into SSTV pixel frequency range"""
 
     freq = (lum * 3.1372549) + 1500
-    return 2300 if freq > 2300 else 1500 if freq < 1500 else freq
+    return min(max(freq, 1500), 2300)
 
 
 class SSTVEncoder(object):
