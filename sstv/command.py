@@ -1,12 +1,14 @@
 """Parsing arguments and starting program from command line"""
 
+import argparse
+from sys import exit
+
+from PIL import Image
+from soundfile import available_formats as available_audio_formats
+
 from .common import log_message
 from .decode import SSTVDecoder
 from .spec import VIS_MAP
-from PIL import Image
-from soundfile import available_formats as available_audio_formats
-from sys import exit
-import argparse
 
 
 class SSTVCommand(object):

@@ -1,8 +1,9 @@
 """Class and methods to encode SSTV signal"""
 
+import numpy as np
+
 from . import spec
 from .common import log_message, progress_bar
-import numpy as np
 
 
 def calc_freq(lum):

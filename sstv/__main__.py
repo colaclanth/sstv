@@ -1,7 +1,8 @@
 """Main entry point for command line program"""
 
-from sys import exit
 import signal
+from sys import exit
+
 import sstv
 
 

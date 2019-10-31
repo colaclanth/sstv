@@ -1,11 +1,12 @@
 """Class and methods to decode SSTV signal"""
 
-from . import spec
-from .common import log_message, progress_bar
-from PIL import Image
-from scipy.signal.windows import hann
 import numpy as np
 import soundfile
+from PIL import Image
+from scipy.signal.windows import hann
+
+from . import spec
+from .common import log_message, progress_bar
 
 
 def calc_lum(freq):
