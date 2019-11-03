@@ -1,7 +1,7 @@
 """Parsing arguments and starting program from command line"""
 
 import argparse
-from sys import exit
+from sys import argv, exit
 
 from PIL import Image
 from soundfile import available_formats as available_audio_formats
@@ -25,13 +25,16 @@ examples:
   Start decoding SSTV signal at 50.5 seconds into the audio
     $ sstv -d audio.ogg -s 50.50"""
 
-    def __init__(self):
+    def __init__(self, shell_args=None):
         """Handle command line arguments"""
 
         self._audio_file = None
         self._output_file = None
 
-        self.args = self.parse_args()
+        if shell_args is None:
+            self.args = self.parse_args(argv[1:])
+        else:
+            self.args = self.parse_args(shell_args)
 
     def __enter__(self):
         return self
@@ -62,8 +65,6 @@ examples:
                             default=0.0, dest="skip")
         parser.add_argument("-V", "--version", action="version",
                             version=version)
-        parser.add_argument("-v", "--verbose", action="count", default=1,
-                            help="increase output to the terminal")
         parser.add_argument("--list-modes", action="store_true",
                             dest="list_modes",
                             help="list supported SSTV modes")
@@ -75,11 +76,11 @@ examples:
                             help="list supported image file formats")
         return parser
 
-    def parse_args(self):
+    def parse_args(self, shell_args):
         """Parse command line arguments"""
 
         parser = self.init_args()
-        args = parser.parse_args()
+        args = parser.parse_args(shell_args)
 
         self._audio_file = args.audio_file
         self._output_file = args.output_file
