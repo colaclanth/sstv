@@ -38,7 +38,6 @@ class SSTVDecoder(object):
     """Create an SSTV decoder for decoding audio data"""
 
     def __init__(self, audio_file):
-        self.log_basic = True
         self.mode = None
 
         self._audio_file = audio_file
