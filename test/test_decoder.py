@@ -1,6 +1,5 @@
 """Test cases for the decoder code"""
 
-import sys
 import unittest
 
 from sstv.decode import barycentric_peak_interp, calc_lum, SSTVDecoder
@@ -10,11 +9,13 @@ class SSTVDecoderTestCase(unittest.TestCase):
     """Test SSTVDecoder class"""
 
     def test_calc_lum(self):
+        """Test function that calculates pixel byte from frequency"""
         self.assertEqual(calc_lum(1450), 0)
         self.assertEqual(calc_lum(2350), 255)
         self.assertEqual(calc_lum(1758.1531), 82)
 
     def test_barycentric_peak_interp(self):
+        """Test function to interpolate the x value from frequency bins"""
         bins = [100, 50, 0, 25, 50, 75, 100, 200, 150, 100]
         # Left neighbour is higher, so result must be smaller/equal
         self.assertLess(barycentric_peak_interp(bins, 9), 9)
@@ -28,12 +29,14 @@ class SSTVDecoderTestCase(unittest.TestCase):
         self.assertEqual(barycentric_peak_interp(bins, 2), 2)
 
     def test_decoder_init(self):
+        """Test SSTVDecoder init"""
         with open("./test/data/m1.ogg", 'rb') as fp:
             with SSTVDecoder(fp) as decoder:
                 self.assertEqual(decoder._audio_file, fp)
                 self.assertEqual(decoder._sample_rate, 44100)
 
     def test_decoder_freq_detect(self):
+        """Test the peak frequency detection function"""
         with open("./test/data/220hz_sine.ogg", 'rb') as fp:
             with SSTVDecoder(fp) as decoder:
                 # Test using all samples in sound file

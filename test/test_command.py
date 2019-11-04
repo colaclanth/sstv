@@ -32,7 +32,7 @@ class SSTVCommandTestCase(unittest.TestCase):
         with self.assertRaises(SystemExit):
             SSTVCommand(["-d"])
         self.assertIn("expected one argument", sys.stderr.getvalue().strip(),
-                      "Wrong argument error message not present in output")
+                      "'Wrong argument' error message not present in output")
 
         with self.assertRaises(SystemExit):
             SSTVCommand(["--decode"])
@@ -57,6 +57,7 @@ class SSTVCommandTestCase(unittest.TestCase):
                          "skip value not set to default value")
 
     def test_arg_parser_decode_set_skip(self):
+        """Test setting the skip flag to a custom value"""
         args = SSTVCommand(["-d", "./test/data/m1.ogg", "-s", "15.50"]).args
         self.assertTrue(hasattr(args, "skip"),
                         "skip attribute not set")
